@@ -1,7 +1,5 @@
 # Terminal News Agent
 
-![Terminal News Agent Logo](./image/logo.png)
-
 **Terminal News Agent** is the ultimate tool for reading, analyzing, and “dissecting” Google News headlines directly from your terminal.  
 Not only can you browse the latest news, but you can launch **multiple local LLM agents** (via Ollama) to generate summaries, analyze implications, and build complex scenarios—all without a browser and with total privacy.
 
