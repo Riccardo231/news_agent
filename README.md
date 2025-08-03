@@ -35,6 +35,6 @@ Not only can you browse the latest news, but you can launch **multiple local LLM
 Clone the repo and install locally:
 
 ```bash
-git clone https://github.com/your-user/news_agent.git
+git clone https://github.com/Pinperepette/news_agent.git
 cd news_agent
 pip install .
