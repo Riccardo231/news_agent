@@ -38,3 +38,5 @@ Clone the repo and install locally:
 git clone https://github.com/Pinperepette/news_agent.git
 cd news_agent
 pip install .
+
+news-agent
