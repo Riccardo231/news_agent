@@ -33,7 +33,7 @@ Not only can you browse the latest news, but you can launch **multiple AI agents
 ---
 
 ![Terminal Demo 1](./image/term_1.png)
-![Terminal Demo 2](./image/term_2.png)
+![Terminal Demo 1](./image/term_2.png)
 
 ---
 
