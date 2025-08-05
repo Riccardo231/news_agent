@@ -94,7 +94,7 @@ def main():
                 console.print("\n[bold green]Modelli trovati (ordinati per dimensione):[/bold green]")
                 for m in models_sorted:
                     size_mb = m.get("size", 0)
-                    size_str = f"{size_mb} MB" if size_mb > 0 else "N/A"
+                    size_str = f"{size_mb / 1024} GB" if size_mb > 0 else "N/A"
                     console.print(f"- {m['name']} ({size_str})")
 
                 if len(models_sorted) < 3:
