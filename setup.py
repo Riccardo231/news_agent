@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'requests',
         'rich',
+        'beautifulsoup4',
     ],
     include_package_data=True,
     package_data={'': ['settings.ini']},

@@ -3,11 +3,68 @@
 import requests
 import json
 from typing import Dict, List, Optional
+from bs4 import BeautifulSoup
+import re
 
 class NewsVerifier:
     def __init__(self, serpapi_key: str):
         self.serpapi_key = serpapi_key
         self.base_url = "https://serpapi.com/search"
+    
+    def scrape_article_content(self, url: str) -> str:
+        """Scarica e estrae il contenuto dell'articolo dal link"""
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Rimuovi script, style, nav, header, footer
+            for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
+                tag.decompose()
+            
+            # Cerca il contenuto principale
+            content_selectors = [
+                'article',
+                '[class*="content"]',
+                '[class*="article"]',
+                '[class*="post"]',
+                '.entry-content',
+                '.post-content',
+                '.article-content',
+                'main'
+            ]
+            
+            content = ""
+            for selector in content_selectors:
+                elements = soup.select(selector)
+                if elements:
+                    content = ' '.join([elem.get_text(strip=True) for elem in elements])
+                    if len(content) > 200:
+                        break
+            
+            # Se non trova contenuto specifico, prendi tutto il body
+            if not content or len(content) < 200:
+                body = soup.find('body')
+                if body:
+                    content = body.get_text(strip=True)
+            
+            # Pulisci il testo
+            content = re.sub(r'\s+', ' ', content)
+            content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]]', '', content)
+            
+            # Limita la lunghezza
+            if len(content) > 3000:
+                content = content[:3000] + "..."
+            
+            return content
+            
+        except Exception as e:
+            return None
     
     def search_fact_check(self, query: str, max_results: int = 5) -> List[Dict]:
         """Cerca informazioni di fact-checking su una query"""
@@ -28,11 +85,15 @@ class NewsVerifier:
             results = []
             if 'organic_results' in data:
                 for result in data['organic_results']:
+                    # Scarica il contenuto completo dell'articolo
+                    full_content = self.scrape_article_content(result.get('link', ''))
+                    
                     results.append({
                         'title': result.get('title', ''),
                         'snippet': result.get('snippet', ''),
                         'link': result.get('link', ''),
-                        'source': result.get('source', '')
+                        'source': result.get('source', ''),
+                        'full_content': full_content
                     })
             
             return results
@@ -65,11 +126,15 @@ class NewsVerifier:
                 for result in data['organic_results']:
                     link = result.get('link', '').lower()
                     if any(source in link for source in reliable_sources):
+                        # Scarica il contenuto completo dell'articolo
+                        full_content = self.scrape_article_content(result.get('link', ''))
+                        
                         results.append({
                             'title': result.get('title', ''),
                             'snippet': result.get('snippet', ''),
                             'link': result.get('link', ''),
-                            'source': result.get('source', '')
+                            'source': result.get('source', ''),
+                            'full_content': full_content
                         })
                         if len(results) >= max_results:
                             break
@@ -111,6 +176,10 @@ class NewsVerifier:
             )
         }
     
+    def verify_truthfulness(self, article: Dict) -> Dict:
+        """Verifica la veridicità di un articolo (alias di verify_article per la validazione della verità)"""
+        return self.verify_article(article)
+    
     def _generate_verification_summary(self, fact_check_results: List[Dict], 
                                      reliable_results: List[Dict], 
                                      query: str) -> str:
@@ -126,15 +195,22 @@ class NewsVerifier:
                 title = result.get('title', '')
                 snippet = result.get('snippet', '')
                 source = result.get('source', '')
-                summary_parts.append(f"  {i}. {title} ({source})")
-                summary_parts.append(f"     {snippet[:150]}...")
+                has_full_content = "✅" if result.get('full_content') else "⚠️"
+                summary_parts.append(f"  {i}. {title} ({source}) {has_full_content}")
+                if result.get('full_content'):
+                    summary_parts.append(f"     Contenuto completo scaricato ({len(result['full_content'])} caratteri)")
+                else:
+                    summary_parts.append(f"     {snippet[:150]}...")
 
         if reliable_results and not reliable_results[0].get('error'):
             summary_parts.append("\n📰 FONTI AFFIDABILI:")
             for i, result in enumerate(reliable_results[:3], 1):
                 title = result.get('title', '')
                 source = result.get('source', '')
-                summary_parts.append(f"  {i}. {title} ({source})")
+                has_full_content = "✅" if result.get('full_content') else "⚠️"
+                summary_parts.append(f"  {i}. {title} ({source}) {has_full_content}")
+                if result.get('full_content'):
+                    summary_parts.append(f"     Contenuto completo scaricato ({len(result['full_content'])} caratteri)")
 
         summary_parts.append("\n📊 VALUTAZIONE:")
         if fact_check_results and not fact_check_results[0].get('error'):

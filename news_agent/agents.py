@@ -1,188 +1,173 @@
 #!/usr/bin/env python
 
 import requests
+from bs4 import BeautifulSoup
+import re
 
-def ollama_agent(prompt, model, ollama_url, max_tokens=2048):
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"num_predict": max_tokens}
-    }
+def ollama_agent(prompt, ai_provider, max_tokens=2048):
+    """Funzione wrapper per compatibilità con il vecchio sistema"""
+    return ai_provider.generate(prompt, max_tokens)
+
+def scrape_article_content(url):
     try:
-        response = requests.post(ollama_url, json=payload, timeout=180)
-        data = response.json()
-        return data.get("response", "[Nessuna risposta da Ollama]")
-    except Exception as e:
-        return f"[Errore chiamando Ollama: {e}]"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        if 'news.google.com/rss/articles' in url:
+            response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+            response.raise_for_status()
+            if 'consent.google.com' in response.url:
+                headers['Accept'] = 'application/rss+xml, application/xml, text/xml'
+                headers['Accept-Language'] = 'en-US,en;q=0.9'
+                response = requests.get(url, headers=headers, timeout=10, allow_redirects=False)
+            soup = BeautifulSoup(response.content, 'xml')
+            link_element = soup.find('link')
+            if link_element:
+                real_link = link_element.text.strip()
+                if real_link and real_link.startswith('http'):
+                    url = real_link
+                else: return None
+            else: return None
+        elif 'news.google.com' in url:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+            selectors = [
+                'a[href*="http"]:not([href*="google.com"])', 'a[data-n-tid]', 'a[jslog]',
+                'article a[href*="http"]', '.VDXfz a[href*="http"]', 'a[href*="repubblica"]',
+                'a[href*="corriere"]', 'a[href*="ansa"]', 'a[href*="ilfatto"]',
+                'a[href*="lastampa"]', 'a[href*="ilsole24ore"]', 'a[href*="ilpost"]',
+                'a[href*="ilmanifesto"]'
+            ]
+            real_link = None
+            for selector in selectors:
+                links = soup.select(selector)
+                for link in links:
+                    href = link.get('href')
+                    if href and 'google.com' not in href and href.startswith('http'):
+                        real_link = href
+                        break
+                if real_link: break
+            if not real_link: return None
+            url = real_link
 
-def agent_riassunto(article, model, ollama_url):
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']): tag.decompose()
+        content_selectors = ['article', '[class*="content"]', '[class*="article"]', '[class*="post"]', '.entry-content', '.post-content', '.article-content', 'main']
+        content = ""
+        for selector in content_selectors:
+            elements = soup.select(selector)
+            if elements:
+                content = ' '.join([elem.get_text(strip=True) for elem in elements])
+                if len(content) > 200: break
+        if not content or len(content) < 200:
+            body = soup.find('body')
+            if body: content = body.get_text(strip=True)
+        content = re.sub(r'\s+', ' ', content)
+        content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]]', '', content)
+        if len(content) > 5000: content = content[:5000] + "..."
+        return content
+    except Exception as e: return None
+
+def get_article_full_content(article):
+    content = scrape_article_content(article['link'])
+    if not content: return article['summary']
+    return content
+
+def agent_riassunto(article, ai_provider):
+    content = get_article_full_content(article)
     prompt = (
         f"Leggi la seguente notizia e fornisci un riassunto breve, chiaro e oggettivo.\n\n"
         f"TITOLO: {article['title']}\n\n"
-        f"TESTO: {article['summary']}\n"
+        f"TESTO COMPLETO: {content}\n"
         f"(Autore/Fonte: {article['author']}, Data: {article['date']})"
     )
-    return ollama_agent(prompt, model, ollama_url)
+    return ai_provider.generate(prompt, max_tokens=500)
 
-def agent_implicazioni(article, riassunto, model, ollama_url):
+def agent_implicazioni(article, riassunto, ai_provider):
+    content = get_article_full_content(article)
     prompt = (
         f"Hai letto questa notizia (riassunta):\n\n"
         f"RIASSUNTO: {riassunto}\n\n"
+        f"TESTO COMPLETO: {content}\n\n"
         f"Titolo: {article['title']}\n"
         f"Analizza le possibili implicazioni, conseguenze sociali, economiche, tecniche e politiche che derivano da questa notizia."
         f"Sii concreto e ragionato, anche ipotizzando scenari realistici per il futuro."
     )
-    return ollama_agent(prompt, model, ollama_url)
+    return ai_provider.generate(prompt, max_tokens=600)
 
-def agent_teoria(article, riassunto, implicazioni, model, ollama_url):
+def agent_teoria(article, riassunto, implicazioni, ai_provider):
+    content = get_article_full_content(article)
     prompt = (
         f"Considerando questa notizia:\n"
         f"TITOLO: {article['title']}\n"
         f"RIASSUNTO: {riassunto}\n"
         f"IMPLICAZIONI: {implicazioni}\n\n"
+        f"TESTO COMPLETO: {content}\n\n"
         f"Costruisci una possibile teoria, spiegazione complessiva o scenario più ampio "
         f"che possa mettere insieme il significato della notizia e delle sue conseguenze, anche collegando ad altri fenomeni globali o a sviluppi futuri."
     )
-    return ollama_agent(prompt, model, ollama_url)
+    return ai_provider.generate(prompt, max_tokens=700)
 
-def agent_analisi_universale(article, model, ollama_url):
-    """Agente con framework di analisi multi-tematica universale e metodologico"""
-    
-    framework_prompt = f"""
-# FRAMEWORK DI ANALISI MULTI-TEMATICA UNIVERSALE
-## Metodologia: Analisi Critica Strutturata
+def summarize_with_ollama(articles, ai_provider):
+    N = 15
+    if not articles: return "[Nessun articolo disponibile]"
+    testo = "\n".join([f"{a['title']}" for a in articles[:N]])
+    prompt = (
+        "Hai una lista di titoli di notizie del giorno:\n\n"
+        f"{testo}\n\n"
+        "Fai un sunto ragionato delle principali notizie (max 8 righe), estrapola i temi ricorrenti, "
+        "le notizie di maggiore impatto e commenta brevemente. Scrivi in italiano, risposta discorsiva."
+    )
+    return ai_provider.generate(prompt, max_tokens=1024)
 
-### CONTESTO DELL'ARTICOLO
-**Titolo:** {article['title']}
-**Fonte:** {article['author']}
-**Data:** {article['date']}
-**Contenuto:** {article['summary']}
+def summarize_article(article, ai_provider):
+    content = get_article_full_content(article)
+    prompt = (
+        f"Leggi questo articolo e fornisci un riassunto dettagliato e ben strutturato.\n\n"
+        f"TITOLO: {article['title']}\n"
+        f"FONTE: {article['author']}\n"
+        f"DATA: {article['date']}\n\n"
+        f"CONTENUTO COMPLETO:\n{content}\n\n"
+        f"Fornisci un riassunto di 8-10 righe che includa:\n"
+        f"- I fatti principali\n"
+        f"- Il contesto\n"
+        f"- Le implicazioni principali\n"
+        f"Scrivi in italiano in modo chiaro e oggettivo."
+    )
+    return ai_provider.generate(prompt, max_tokens=500)
 
----
-
-## 1. ANALISI FATTUALE (FACTUAL ANALYSIS)
-### 1.1 Identificazione dei Fatti Principali
-- Estrai i fatti verificabili e oggettivi
-- Distingui tra fatti e opinioni
-- Identifica le fonti citate e la loro affidabilità
-
-### 1.2 Contesto Storico e Geografico
-- Colloca l'evento nel contesto storico appropriato
-- Identifica il contesto geografico e culturale
-- Evidenzia eventuali precedenti rilevanti
-
----
-
-## 2. ANALISI MULTI-DIMENSIONALE (MULTI-DIMENSIONAL ANALYSIS)
-### 2.1 Dimensioni Sociali
-- Impatto sulle comunità e sui gruppi sociali
-- Dinamiche di potere e relazioni sociali
-- Cambiamenti nelle norme sociali o culturali
-
-### 2.2 Dimensioni Economiche
-- Impatto economico diretto e indiretto
-- Effetti su mercati, settori o economie
-- Implicazioni per la distribuzione della ricchezza
-
-### 2.3 Dimensioni Politiche
-- Impatto su istituzioni e processi politici
-- Effetti su policy e governance
-- Dinamiche di potere e influenza
-
-### 2.4 Dimensioni Tecnologiche
-- Implicazioni tecnologiche e innovative
-- Effetti su infrastrutture e sistemi
-- Cambiamenti nelle capacità tecniche
-
-### 2.5 Dimensioni Ambientali
-- Impatto ambientale e sostenibilità
-- Effetti su risorse naturali
-- Implicazioni per il cambiamento climatico
-
----
-
-## 3. ANALISI CRITICA (CRITICAL ANALYSIS)
-### 3.1 Bias e Limiti
-- Identifica potenziali bias nella narrazione
-- Evidenzia limiti metodologici o informativi
-- Considera prospettive alternative
-
-### 3.2 Credibilità e Affidabilità
-- Valuta la credibilità delle fonti
-- Analizza la qualità delle informazioni
-- Identifica eventuali contraddizioni
-
-### 3.3 Interessi e Agende
-- Identifica potenziali interessi in gioco
-- Analizza le agende delle parti coinvolte
-- Considera il contesto di potere
-
----
-
-## 4. ANALISI PROSPETTIVA (FORWARD-LOOKING ANALYSIS)
-### 4.1 Scenari Probabili
-- Sviluppi più probabili nel breve termine
-- Trend di medio-lungo periodo
-- Punti di svolta potenziali
-
-### 4.2 Implicazioni Strategiche
-- Opportunità e minacce emergenti
-- Implicazioni per decisioni strategiche
-- Necessità di adattamento o cambiamento
-
-### 4.3 Domande Aperte
-- Aree di incertezza e ambiguità
-- Domande che richiedono ulteriori indagini
-- Aspetti che necessitano monitoraggio
-
----
-
-## 5. SINTESI METODOLOGICA (METHODOLOGICAL SYNTHESIS)
-### 5.1 Livello di Confidenza
-- Valuta la solidità delle conclusioni
-- Identifica le basi di evidenza
-- Considera l'incertezza residua
-
-### 5.2 Raccomandazioni
-- Suggerimenti per ulteriori analisi
-- Aree che richiedono attenzione
-- Priorità per il monitoraggio
-
----
-
-## OUTPUT RICHIESTO
-Fornisci un'analisi strutturata seguendo questo framework. Sii:
-- **Obiettivo**: Basa l'analisi sui fatti disponibili
-- **Sistematico**: Segui la struttura metodologica
-- **Critico**: Considera prospettive multiple
-- **Prospettico**: Guarda oltre il presente immediato
-- **Pratico**: Fornisci insights utilizzabili
-
-Rispondi in italiano, usando una struttura chiara con sezioni e sottosezioni.
-"""
-    
-    return ollama_agent(framework_prompt, model, ollama_url, max_tokens=4096)
-
-def agent_verifica(article, verification_data, model, ollama_url):
-    """Agente per valutare la veridicità di una notizia basandosi sui dati di verifica"""
+def agent_verifica(article, verification_data, ai_provider):
     fact_check_results = verification_data.get('fact_check_results', [])
     reliable_results = verification_data.get('reliable_sources_results', [])
     
-    # Prepara i dati per l'analisi
-    fact_check_text = ""
+    fact_check_content = ""
     if fact_check_results and not fact_check_results[0].get('error'):
-        fact_check_text = "\n".join([
-            f"- {result.get('title', '')}: {result.get('snippet', '')}"
-            for result in fact_check_results[:3]
-        ])
+        for result in fact_check_results[:3]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            
+            if full_content:
+                fact_check_content += f"\n--- ARTICOLO: {title} ({source}) ---\n{full_content}\n"
+            else:
+                fact_check_content += f"\n--- ARTICOLO: {title} ({source}) ---\n{snippet}\n"
     
-    reliable_text = ""
+    reliable_content = ""
     if reliable_results and not reliable_results[0].get('error'):
-        reliable_text = "\n".join([
-            f"- {result.get('title', '')} ({result.get('source', '')})"
-            for result in reliable_results[:3]
-        ])
+        for result in reliable_results[:3]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            
+            if full_content:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{full_content}\n"
+            else:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
     
     prompt = (
         f"Analizza la veridicità della seguente notizia basandoti sui dati di verifica forniti.\n\n"
@@ -191,8 +176,8 @@ def agent_verifica(article, verification_data, model, ollama_url):
         f"Riassunto: {article['summary']}\n"
         f"Fonte: {article['author']}\n"
         f"Data: {article['date']}\n\n"
-        f"DATI DI FACT-CHECKING:\n{fact_check_text}\n\n"
-        f"FONTI AFFIDABILI:\n{reliable_text}\n\n"
+        f"ARTICOLI DI FACT-CHECKING:\n{fact_check_content}\n\n"
+        f"FONTI AFFIDABILI:\n{reliable_content}\n\n"
         f"VALUTAZIONE:\n"
         f"1. Analizza la credibilità della fonte originale\n"
         f"2. Confronta con i risultati di fact-checking\n"
@@ -203,17 +188,55 @@ def agent_verifica(article, verification_data, model, ollama_url):
         f"Rispondi in italiano in modo chiaro e strutturato."
     )
     
-    return ollama_agent(prompt, model, ollama_url)
+    return ai_provider.generate(prompt, max_tokens=800)
 
-def summarize_with_ollama(articles, model, ollama_url):
-    N = 30
-    if not articles:
-        return "[Nessun articolo disponibile]"
-    testo = "\n".join([f"{a['title']} — {a['summary']}" for a in articles[:N]])
+def agent_validazione_verita(article, verification_data, ai_provider):
+    fact_check_results = verification_data.get('fact_check_results', [])
+    reliable_results = verification_data.get('reliable_sources_results', [])
+    
+    fact_check_content = ""
+    if fact_check_results and not fact_check_results[0].get('error'):
+        for result in fact_check_results[:3]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            
+            if full_content:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\n{full_content}\n"
+            else:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\n{snippet}\n"
+    
+    reliable_content = ""
+    if reliable_results and not reliable_results[0].get('error'):
+        for result in reliable_results[:3]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            
+            if full_content:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{full_content}\n"
+            else:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
+    
     prompt = (
-        "Hai una lista di notizie del giorno:\n\n"
-        f"{testo}\n\n"
-        "Fai un sunto ragionato delle principali notizie (max 10 righe), estrapola i temi ricorrenti, "
-        "le notizie di maggiore impatto e commenta brevemente. Scrivi in italiano, risposta discorsiva."
+        f"Sei un esperto di fact-checking. Valuta la veridicità di questa notizia.\n\n"
+        f"🔍 NOTIZIA DA VALIDARE:\n"
+        f"📰 Titolo: {article['title']}\n"
+        f"📝 Riassunto: {article['summary']}\n"
+        f"🏢 Fonte: {article['author']}\n"
+        f"📅 Data: {article['date']}\n\n"
+        f"🔎 RISULTATI FACT-CHECKING:\n{fact_check_content}\n\n"
+        f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
+        f"🎯 VALUTAZIONE FINALE:\n"
+        f"Devi fornire:\n"
+        f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
+        f"2. **CONFIDENZA**: [ALTA] / [MEDIA] / [BASSA] (quanto sei sicuro del verdetto)\n"
+        f"3. **MOTIVAZIONE**: Spiega brevemente perché hai dato questo verdetto\n"
+        f"4. **RED FLAG**: Eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
+        f"5. **CONFERME**: Fonti che supportano o contraddicono la notizia\n\n"
+        f"Rispondi in modo diretto e chiaro, evidenziando il verdetto finale."
     )
-    return ollama_agent(prompt, model, ollama_url)
+    
+    return ai_provider.generate(prompt, max_tokens=600)

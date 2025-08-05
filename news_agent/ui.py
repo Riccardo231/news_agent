@@ -70,11 +70,17 @@ def show_table(articles, page, per_page, selected_idx=None, has_serpapi=False):
     console.print(f"[i]{commands}[/i]")
 
 def show_article(article):
+    from .agents import get_article_full_content
+    
     os.system('clear' if os.name == 'posix' else 'cls')
+    
+    # Ottieni il contenuto completo
+    content = get_article_full_content(article)
+    
     article_panel = Panel(
         f"[bold]{article['title']}[/bold]\n\n"
         f"[dim]{article['date']}[/dim] [cyan]{article['author']}[/cyan]\n\n"
-        f"{article['summary']}\n\n"
+        f"{content}\n\n"
         f"[link={article['link']}]Leggi su Google News (premi 'o' per aprire)[/link]",
         title="Articolo dettagliato",
         border_style="white"
@@ -87,10 +93,11 @@ def show_verification_menu():
     console.print("\n[bold cyan]🔍 MENU VERIFICA[/bold cyan]")
     console.print("1. Verifica articolo selezionato")
     console.print("2. Verifica testo personalizzato")
+    console.print("3. Validazione verità (giudizio diretto)")
     console.print("0. Torna indietro")
-    return console.input("\nSeleziona opzione (0-2): ").strip()
+    return console.input("\nSeleziona opzione (0-3): ").strip()
 
-def show_verification_results(verification_data, agent_analysis=None):
+def show_verification_results(verification_data, agent_analysis=None, model_name=None):
     """Mostra i risultati della verifica"""
     os.system('clear' if os.name == 'posix' else 'cls')
     console = Console()
@@ -102,9 +109,12 @@ def show_verification_results(verification_data, agent_analysis=None):
     ))
     
     if agent_analysis:
+        title = "🤖 Analisi Agente LLM"
+        if model_name:
+            title += f" - {model_name}"
         console.print(Panel(
             agent_analysis,
-            title="🤖 Analisi Agente LLM",
+            title=title,
             border_style="yellow"
         ))
     
