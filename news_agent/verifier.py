@@ -23,7 +23,6 @@ class NewsVerifier:
             
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Rimuovi script, style, nav, header, footer
             for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
                 tag.decompose()
             
@@ -47,17 +46,14 @@ class NewsVerifier:
                     if len(content) > 200:
                         break
             
-            # Se non trova contenuto specifico, prendi tutto il body
             if not content or len(content) < 200:
                 body = soup.find('body')
                 if body:
                     content = body.get_text(strip=True)
             
-            # Pulisci il testo
             content = re.sub(r'\s+', ' ', content)
-            content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]]', '', content)
+            content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]\'\"]', '', content)
             
-            # Limita la lunghezza
             if len(content) > 3000:
                 content = content[:3000] + "..."
             
@@ -85,7 +81,6 @@ class NewsVerifier:
             results = []
             if 'organic_results' in data:
                 for result in data['organic_results']:
-                    # Scarica il contenuto completo dell'articolo
                     full_content = self.scrape_article_content(result.get('link', ''))
                     
                     results.append({
@@ -126,7 +121,6 @@ class NewsVerifier:
                 for result in data['organic_results']:
                     link = result.get('link', '').lower()
                     if any(source in link for source in reliable_sources):
-                        # Scarica il contenuto completo dell'articolo
                         full_content = self.scrape_article_content(result.get('link', ''))
                         
                         results.append({

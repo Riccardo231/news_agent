@@ -66,7 +66,7 @@ def scrape_article_content(url):
             body = soup.find('body')
             if body: content = body.get_text(strip=True)
         content = re.sub(r'\s+', ' ', content)
-        content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]]', '', content)
+        content = re.sub(r'[^\w\s\.\,\!\?\:\;\-\(\)\[\]\'\"]', '', content)
         if len(content) > 5000: content = content[:5000] + "..."
         return content
     except Exception as e: return None
@@ -169,13 +169,18 @@ def agent_verifica(article, verification_data, ai_provider):
             else:
                 reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
     
+    title = article.get('title', 'Testo personalizzato')
+    summary = article.get('summary', '')
+    author = article.get('author', 'Fonte sconosciuta')
+    date = article.get('date', 'Data non disponibile')
+    
     prompt = (
         f"Analizza la veridicità della seguente notizia basandoti sui dati di verifica forniti.\n\n"
         f"NOTIZIA DA VERIFICARE:\n"
-        f"Titolo: {article['title']}\n"
-        f"Riassunto: {article['summary']}\n"
-        f"Fonte: {article['author']}\n"
-        f"Data: {article['date']}\n\n"
+        f"Titolo: {title}\n"
+        f"Riassunto: {summary}\n"
+        f"Fonte: {author}\n"
+        f"Data: {date}\n\n"
         f"ARTICOLI DI FACT-CHECKING:\n{fact_check_content}\n\n"
         f"FONTI AFFIDABILI:\n{reliable_content}\n\n"
         f"VALUTAZIONE:\n"
@@ -220,13 +225,18 @@ def agent_validazione_verita(article, verification_data, ai_provider):
             else:
                 reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
     
+    title = article.get('title', 'Testo personalizzato')
+    summary = article.get('summary', '')
+    author = article.get('author', 'Fonte sconosciuta')
+    date = article.get('date', 'Data non disponibile')
+    
     prompt = (
         f"Sei un esperto di fact-checking. Valuta la veridicità di questa notizia.\n\n"
         f"🔍 NOTIZIA DA VALIDARE:\n"
-        f"📰 Titolo: {article['title']}\n"
-        f"📝 Riassunto: {article['summary']}\n"
-        f"🏢 Fonte: {article['author']}\n"
-        f"📅 Data: {article['date']}\n\n"
+        f"📰 Titolo: {title}\n"
+        f"📝 Riassunto: {summary}\n"
+        f"🏢 Fonte: {author}\n"
+        f"📅 Data: {date}\n\n"
         f"🔎 RISULTATI FACT-CHECKING:\n{fact_check_content}\n\n"
         f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
         f"🎯 VALUTAZIONE FINALE:\n"

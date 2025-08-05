@@ -74,7 +74,6 @@ def show_article(article):
     
     os.system('clear' if os.name == 'posix' else 'cls')
     
-    # Ottieni il contenuto completo
     content = get_article_full_content(article)
     
     article_panel = Panel(
