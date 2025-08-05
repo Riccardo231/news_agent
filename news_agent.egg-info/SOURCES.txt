@@ -1,0 +1,16 @@
+README.md
+setup.py
+news_agent/__init__.py
+news_agent/agents.py
+news_agent/fetcher.py
+news_agent/main.py
+news_agent/settings.ini
+news_agent/settings.py
+news_agent/ui.py
+news_agent/verifier.py
+news_agent.egg-info/PKG-INFO
+news_agent.egg-info/SOURCES.txt
+news_agent.egg-info/dependency_links.txt
+news_agent.egg-info/entry_points.txt
+news_agent.egg-info/requires.txt
+news_agent.egg-info/top_level.txt

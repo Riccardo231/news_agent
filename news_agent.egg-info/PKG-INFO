@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: news_agent
+Version: 0.0.0
+Summary: Terminal news agent: fetches Google News, launches LLM agents, works with Ollama, terminal UI.
+Author: Pinperepette
+Author-email: pinperepette@gmail.com
+Requires-Dist: requests
+Requires-Dist: rich
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist
+Dynamic: summary
