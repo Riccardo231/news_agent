@@ -91,12 +91,6 @@ def main():
                 # Ordina i modelli per dimensione (campo 'size'), decrescente
                 models_sorted = sorted(models_data, key=lambda m: m.get("size", 0), reverse=True)
 
-                console.print("\n[bold green]Modelli trovati (ordinati per dimensione):[/bold green]")
-                for m in models_sorted:
-                    size_mb = m.get("size", 0)
-                    size_str = f"{size_mb / 1024} GB" if size_mb > 0 else "N/A"
-                    console.print(f"- {m['name']} ({size_str})")
-
                 if len(models_sorted) < 3:
                     console.print("[red]⚠️ Trovati meno di 3 modelli, scegli manualmente.[/red]")
                     for i, m in enumerate(models_sorted):
