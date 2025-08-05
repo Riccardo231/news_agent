@@ -83,27 +83,31 @@ def main():
                 resp = requests.get(ollama_url.replace("/generate", "/tags"))
                 resp.raise_for_status()
                 models_data = resp.json().get("models", [])
-                model_names = sorted(set(m["name"] for m in models_data))
 
-                if not model_names:
+                if not models_data:
                     console.print("[red]❌ Nessun modello trovato su Ollama.[/red]")
                     return
 
-                if len(model_names) < 3:
-                    console.print("[red]⚠️ Trovati meno di 3 modelli, scegli manualmente.[/red]")
-                    for i, name in enumerate(model_names):
-                        console.print(f"{i+1}: {name}")
-                    idx = int(console.input("Inserisci il numero del modello da usare: ").strip()) - 1
-                    if 0 <= idx < len(model_names):
-                        model = model_names[idx]
-                else:
-                    console.print("\n[bold green]Modelli trovati:[/bold green]")
-                    for m in model_names:
-                        console.print(f"- {m}")
+                # Ordina i modelli per dimensione (campo 'size'), decrescente
+                models_sorted = sorted(models_data, key=lambda m: m.get("size", 0), reverse=True)
 
-                    model_light = model_names[0]
-                    model_medium = model_names[len(model_names) // 2]
-                    model_heavy = model_names[-1]
+                console.print("\n[bold green]Modelli trovati (ordinati per dimensione):[/bold green]")
+                for m in models_sorted:
+                    size_mb = m.get("size", 0)
+                    size_str = f"{size_mb} MB" if size_mb > 0 else "N/A"
+                    console.print(f"- {m['name']} ({size_str})")
+
+                if len(models_sorted) < 3:
+                    console.print("[red]⚠️ Trovati meno di 3 modelli, scegli manualmente.[/red]")
+                    for i, m in enumerate(models_sorted):
+                        console.print(f"{i+1}: {m['name']}")
+                    idx = int(console.input("Inserisci il numero del modello da usare: ").strip()) - 1
+                    if 0 <= idx < len(models_sorted):
+                        model = models_sorted[idx]["name"]
+                else:
+                    model_light = models_sorted[-1]["name"]
+                    model_medium = models_sorted[len(models_sorted) // 2]["name"]
+                    model_heavy = models_sorted[0]["name"]
 
                     console.print("\n[bold yellow]Scegli un modello:[/bold yellow]")
                     console.print(f"1: modello più leggero → [green]{model_light}[/green]")
@@ -112,7 +116,6 @@ def main():
                     console.print("p: personalizzato")
 
                     new_model = console.input("Scelta: ").strip()
-
                     if new_model == '1':
                         model = model_light
                     elif new_model == '2':
@@ -131,7 +134,6 @@ def main():
 
             except Exception as e:
                 console.print(f"[red]❌ Errore nel recupero dei modelli: {e}[/red]")
-
         elif user_input == 'l':
             console.print("\n[bold yellow]🌍 Cambia lingua delle notizie[/bold yellow]")
 
@@ -174,7 +176,6 @@ def main():
                     console.print("[red]❌ Codice lingua non valido (usa due lettere tipo 'it', 'en')[/red]")
             else:
                 console.print("[red]❌ Scelta non valida.[/red]")
-
         elif user_input == '\r' or user_input == '\n':
             show_article(articles[selected_idx])
             console.input("Premi invio per tornare alla lista: ")
