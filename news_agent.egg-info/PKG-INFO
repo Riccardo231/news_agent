@@ -6,6 +6,7 @@ Author: Pinperepette
 Author-email: pinperepette@gmail.com
 Requires-Dist: requests
 Requires-Dist: rich
+Requires-Dist: beautifulsoup4
 Dynamic: author
 Dynamic: author-email
 Dynamic: requires-dist

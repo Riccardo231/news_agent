@@ -2,6 +2,7 @@ README.md
 setup.py
 news_agent/__init__.py
 news_agent/agents.py
+news_agent/ai_providers.py
 news_agent/fetcher.py
 news_agent/main.py
 news_agent/settings.ini
