@@ -11,6 +11,7 @@ from rich.console import Console
 import requests
 import webbrowser
 import sys
+from .kaggle_notebook import open_kaggle_notebook
 
 def get_model_name(ai_provider):
     """Ottiene il nome del modello dall'AI provider"""
@@ -219,6 +220,19 @@ def main():
                     console.print("[red]❌ Codice lingua non valido (usa due lettere tipo 'it', 'en')[/red]")
             else:
                 console.print("[red]❌ Scelta non valida.[/red]")
+        elif user_input == 'k':
+            console.print("\n[bold cyan]🔬 Kaggle AI Models[/bold cyan]")
+            console.print("Creando notebook Kaggle per AI models...")
+            
+            notebook_path = open_kaggle_notebook()
+            if notebook_path:
+                console.print(f"\n[green]✅ Notebook creato con successo![/green]")
+                console.print(f"[white]📁 Percorso: {notebook_path}[/white]")
+                console.print(f"\n[yellow]🔗 Kaggle aperto nel browser - carica il notebook per iniziare![/yellow]")
+            else:
+                console.print(f"[red]❌ Errore nella creazione del notebook[/red]")
+            
+            console.input("\nPremi invio per tornare alla lista...")
         elif user_input == '\r' or user_input == '\n':
             show_article(articles[selected_idx])
             console.input("Premi invio per tornare alla lista: ")

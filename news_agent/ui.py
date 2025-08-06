@@ -61,7 +61,7 @@ def show_table(articles, page, per_page, selected_idx=None, has_serpapi=False):
     console = Console()
     console.print(table)
     
-    commands = "Comandi: ↑↓=naviga, Invio=apri articolo, n=avanti, p=indietro, numero=seleziona, o=apri link browser, s=sunto globale, a=agenti LLM, c=scegli LLM, l=lingua, f=notizie successive"
+    commands = "Comandi: ↑↓=naviga, Invio=apri articolo, n=avanti, p=indietro, numero=seleziona, o=apri link browser, s=sunto globale, a=agenti LLM, c=scegli LLM, l=lingua, f=notizie successive, k=kaggle notebook"
 
     if has_serpapi:
         commands += ", v=verifica"
