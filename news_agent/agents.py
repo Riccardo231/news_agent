@@ -151,6 +151,15 @@ def agent_verifica(article, verification_data, ai_provider):
             full_content = result.get('full_content', '')
             source = result.get('source', '')
             search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            # Traduci automaticamente i contenuti in inglese
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
             
             if full_content:
                 fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
@@ -165,6 +174,14 @@ def agent_verifica(article, verification_data, ai_provider):
             full_content = result.get('full_content', '')
             source = result.get('source', '')
             search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
             
             if full_content:
                 reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
@@ -177,24 +194,37 @@ def agent_verifica(article, verification_data, ai_provider):
     date = article.get('date', 'Data non disponibile')
     
     prompt = (
-        f"Analizza la veridicità della seguente notizia basandoti sui dati di verifica forniti.\n\n"
+        f"Sei un analista di intelligence esperto. Analizza la veridicità della seguente notizia.\n\n"
         f"🔍 NOTIZIA DA VERIFICARE:\n"
         f"📰 Titolo: {title}\n"
         f"📝 Riassunto: {summary}\n"
         f"🏢 Fonte: {author}\n"
         f"📅 Data: {date}\n\n"
-        f"🔎 ARTICOLI DI FACT-CHECKING:\n{fact_check_content}\n\n"
+        f"🔎 FONTI DISPONIBILI:\n{fact_check_content}\n\n"
         f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
-        f"📊 VALUTAZIONE COMPLETA:\n"
-        f"1. **CREDIBILITÀ FONTE ORIGINALE**: Valuta l'affidabilità della fonte che ha pubblicato la notizia\n"
-        f"2. **CONFERME E CONTRADDIZIONI**: Identifica quali elementi sono confermati o contraddetti dalle fonti\n"
-        f"3. **CONTROVERSE E DIBATTITI**: Analizza se ci sono versioni diverse o controverse sulla vicenda\n"
-        f"4. **EVIDENZE TECNICHE**: Cerca prove tecniche, testimonianze, documenti ufficiali\n"
-        f"5. **RED FLAG**: Identifica eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
-        f"6. **GIUDIZIO FINALE**: Fornisci un verdetto: VERITIERA, DUBBIA, FALSA, o INSUFFICIENTI DATI\n"
-        f"7. **MOTIVAZIONE**: Spiega il ragionamento dietro la tua valutazione\n\n"
-        f"⚠️ IMPORTANTE: Cerca di identificare se ci sono versioni diverse della storia, controverse, o elementi che mettono in discussione la versione ufficiale.\n\n"
-        f"Rispondi in italiano in modo chiaro e strutturato."
+        f"🎯 ANALISI CRITICA E INTELLIGENTE:\n"
+        f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
+        f"2. **LIVELLO DI CONFIDENZA**: [ALTO 90%+] / [MEDIO 70-90%] / [BASSO <70%]\n"
+        f"3. **FATTI OGGETTIVI**: Elenca solo i fatti realmente verificabili e misurabili\n"
+        f"4. **VALUTAZIONE DEGLI STUDI SCIENTIFICI**: Analizza:\n"
+        f"   - Metodologia dello studio (campione, controlli, peer review)\n"
+        f"   - Finanziamenti e conflitti di interesse\n"
+        f"   - Critiche o repliche esistenti\n"
+        f"   - Consenso scientifico sul tema\n"
+        f"   - Qualità della rivista e del processo di revisione\n"
+        f"5. **CONTROVERSE E DIBATTITI**: Elenca versioni diverse, interpretazioni alternative\n"
+        f"6. **BIAS IDENTIFICATI**: Bias delle fonti, pressioni esterne, interessi economici\n"
+        f"7. **MOTIVAZIONE**: Spiega il ragionamento critico\n\n"
+        f"⚠️ METODO CRITICO E AUTONOMO:\n"
+        f"- VALUTA ogni studio scientifico individualmente (metodologia, campione, peer review)\n"
+        f"- Cerca CONTRADDIZIONI e INCOERENZE tra fonti\n"
+        f"- Identifica CHI ha finanziato lo studio e eventuali conflitti di interesse\n"
+        f"- Verifica se esistono CRITICHE o REPLICHE dello studio specifico\n"
+        f"- Controlla il CONSENSO SCIENTIFICO sul tema (altri studi concordano?)\n"
+        f"- Distingui tra FATTI OGGETTIVI e INTERPRETAZIONI/SPECULAZIONI\n"
+        f"- Valuta la QUALITÀ della metodologia, non solo la fonte\n\n"
+        f"🌐 Se trovi contenuti in inglese, traduci automaticamente le informazioni chiave.\n\n"
+        f"Rispondi in modo diretto e critico, evidenziando il verdetto finale."
     )
     
     return ai_provider.generate(prompt, max_tokens=1000)
@@ -211,6 +241,14 @@ def agent_validazione_verita(article, verification_data, ai_provider):
             full_content = result.get('full_content', '')
             source = result.get('source', '')
             search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
             
             if full_content:
                 fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
@@ -225,6 +263,14 @@ def agent_validazione_verita(article, verification_data, ai_provider):
             full_content = result.get('full_content', '')
             source = result.get('source', '')
             search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
             
             if full_content:
                 reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
@@ -237,24 +283,280 @@ def agent_validazione_verita(article, verification_data, ai_provider):
     date = article.get('date', 'Data non disponibile')
     
     prompt = (
-        f"Sei un esperto di fact-checking. Valuta la veridicità di questa notizia.\n\n"
+        f"Sei un analista di intelligence esperto. Valuta la veridicità di questa notizia.\n\n"
         f"🔍 NOTIZIA DA VALIDARE:\n"
         f"📰 Titolo: {title}\n"
         f"📝 Riassunto: {summary}\n"
         f"🏢 Fonte: {author}\n"
         f"📅 Data: {date}\n\n"
-        f"🔎 RISULTATI FACT-CHECKING:\n{fact_check_content}\n\n"
+        f"🔎 FONTI DISPONIBILI:\n{fact_check_content}\n\n"
         f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
-        f"🎯 VALUTAZIONE FINALE:\n"
-        f"Devi fornire:\n"
+        f"🎯 VALUTAZIONE CRITICA:\n"
         f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
-        f"2. **CONFIDENZA**: [ALTA] / [MEDIA] / [BASSA] (quanto sei sicuro del verdetto)\n"
-        f"3. **CONTROVERSE IDENTIFICATE**: Elenca eventuali versioni diverse o controverse trovate\n"
-        f"4. **EVIDENZE CHIAVE**: Le prove più importanti a favore o contro la notizia\n"
-        f"5. **RED FLAG**: Eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
-        f"6. **MOTIVAZIONE**: Spiega brevemente perché hai dato questo verdetto\n\n"
-        f"⚠️ IMPORTANTE: Se trovi controverse o versioni diverse, evidenziale chiaramente. Non limitarti alla versione ufficiale.\n\n"
-        f"Rispondi in modo diretto e chiaro, evidenziando il verdetto finale."
+        f"2. **LIVELLO DI CONFIDENZA**: [ALTO 90%+] / [MEDIO 70-90%] / [BASSO <70%]\n"
+        f"3. **FATTI OGGETTIVI**: Elenca solo i fatti realmente verificabili\n"
+        f"4. **RED FLAG**: Identifica studi sospetti, ricostruzioni dubbie, bias delle fonti\n"
+        f"5. **CONTROVERSE**: Elenca versioni diverse e interpretazioni alternative\n"
+        f"6. **BIAS**: Identifica conflitti di interesse e pressioni esterne\n"
+        f"7. **MOTIVAZIONE**: Spiega il ragionamento critico\n\n"
+        f"⚠️ METODO CRITICO:\n"
+        f"- NON fidarti di 'studi scientifici' o 'prove tecnologiche' automaticamente\n"
+        f"- Cerca CONTRADDIZIONI e INCOERENZE\n"
+        f"- Identifica CHI ha interesse a diffondere questa notizia\n"
+        f"- Valuta la CREDIBILITÀ delle fonti, non la loro autorevolezza apparente\n"
+        f"- Cerca EVIDENZE CONCRETE, non 'ricostruzioni' o 'simulazioni'\n\n"
+        f"🌐 Se trovi contenuti in inglese, traduci automaticamente le informazioni chiave.\n\n"
+        f"Rispondi in modo diretto e critico, evidenziando il verdetto finale."
     )
     
     return ai_provider.generate(prompt, max_tokens=800)
+
+def agent_verifica_advanced(article, verification_data, ai_provider):
+    """Agente di verifica con ragionamento complesso step-by-step"""
+    fact_check_results = verification_data.get('fact_check_results', [])
+    reliable_results = verification_data.get('reliable_sources_results', [])
+    
+    fact_check_content = ""
+    if fact_check_results and not fact_check_results[0].get('error'):
+        for result in fact_check_results[:5]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
+            
+            if full_content:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
+            else:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
+    
+    reliable_content = ""
+    if reliable_results and not reliable_results[0].get('error'):
+        for result in reliable_results[:5]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
+            
+            if full_content:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
+            else:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
+    
+    title = article.get('title', 'Testo personalizzato')
+    summary = article.get('summary', '')
+    author = article.get('author', 'Fonte sconosciuta')
+    date = article.get('date', 'Data non disponibile')
+    
+    prompt = (
+        f"Sei un analista di intelligence esperto con capacità di ragionamento complesso. Analizza la veridicità della seguente notizia usando un approccio step-by-step.\n\n"
+        f"🔍 NOTIZIA DA VERIFICARE:\n"
+        f"📰 Titolo: {title}\n"
+        f"📝 Riassunto: {summary}\n"
+        f"🏢 Fonte: {author}\n"
+        f"📅 Data: {date}\n\n"
+        f"🔎 FONTI DISPONIBILI:\n{fact_check_content}\n\n"
+        f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
+        f"🧠 RAGIONAMENTO STEP-BY-STEP:\n\n"
+        f"**STEP 1: ANALISI INIZIALE**\n"
+        f"Pensa ad alta voce:\n"
+        f"- Quali sono gli elementi principali della notizia?\n"
+        f"- Che tipo di affermazioni contiene (fatti, opinioni, interpretazioni)?\n"
+        f"- Quali sono i potenziali punti di verifica?\n\n"
+        f"**STEP 2: VALUTAZIONE DELLE FONTI**\n"
+        f"Analizza criticamente:\n"
+        f"- Quali fonti sono più affidabili e perché?\n"
+        f"- Ci sono conflitti di interesse evidenti?\n"
+        f"- Le fonti sono indipendenti tra loro?\n"
+        f"- Ci sono bias temporali o geografici?\n\n"
+        f"**STEP 3: VERIFICA INCROCIATA**\n"
+        f"Confronta sistematicamente:\n"
+        f"- Quali elementi sono confermati da più fonti?\n"
+        f"- Ci sono contraddizioni tra le fonti?\n"
+        f"- Le informazioni sono coerenti temporalmente?\n"
+        f"- Ci sono anomalie o pattern sospetti?\n\n"
+        f"**STEP 4: ANALISI DELLE EVIDENZE**\n"
+        f"Valuta la qualità CRITICAMENTE:\n"
+        f"- Quali sono le evidenze più forti?\n"
+        f"- Per ogni studio scientifico: valuta metodologia, campione, peer review\n"
+        f"- Le evidenze sono dirette o indirette?\n"
+        f"- Ci sono gap informativi significativi?\n"
+        f"- CHI ha finanziato lo studio? Ci sono conflitti di interesse?\n"
+        f"- Esistono critiche o repliche dello studio specifico?\n"
+        f"- Il consenso scientifico sul tema supporta o contraddice?\n\n"
+        f"**STEP 5: VALUTAZIONE CRITICA DEGLI STUDI**\n"
+        f"Analizza ogni studio scientifico:\n"
+        f"- Metodologia: campione rappresentativo? controlli adeguati?\n"
+        f"- Peer review: rivista di qualità? processo di revisione?\n"
+        f"- Finanziamenti: chi ha pagato? conflitti di interesse?\n"
+        f"- Critiche: esistono repliche o critiche metodologiche?\n"
+        f"- Consenso: altri studi concordano o contraddicono?\n"
+        f"- Predatory journals: rivista sconosciuta o di bassa qualità?\n"
+        f"- Pattern sospetti: manipolazioni, contraddizioni, bias evidenti?\n\n"
+        f"**STEP 6: VALUTAZIONE FINALE**\n"
+        f"Raggiungi una conclusione:\n"
+        f"- Basandoti su tutti gli step precedenti\n"
+        f"- Considerando il livello di confidenza\n"
+        f"- Identificando le limitazioni dell'analisi\n\n"
+        f"🎯 RISULTATO FINALE:\n"
+        f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
+        f"2. **LIVELLO DI CONFIDENZA**: [ALTO 90%+] / [MEDIO 70-90%] / [BASSO <70%]\n"
+        f"3. **EVIDENZE CHIAVE**: Le prove più importanti\n"
+        f"4. **RED FLAG IDENTIFICATI**: Segnali di allarme trovati\n"
+        f"5. **LIMITAZIONI**: Cosa non possiamo sapere con certezza\n"
+        f"6. **MOTIVAZIONE**: Spiega il ragionamento finale\n\n"
+        f"⚠️ IMPORTANTE: \n"
+        f"- Usa il ragionamento step-by-step per arrivare a conclusioni ben fondate\n"
+        f"- VALUTA ogni studio scientifico individualmente (metodologia, qualità, consenso)\n"
+        f"- Cerca CHI ha finanziato lo studio e eventuali conflitti di interesse\n"
+        f"- Verifica se esistono critiche o repliche dello studio specifico\n"
+        f"- Controlla il consenso scientifico sul tema\n"
+        f"- Distingui tra studi di qualità e predatory journals\n\n"
+        f"🌐 Se trovi contenuti in inglese, traduci automaticamente le informazioni chiave.\n\n"
+        f"Rispondi in italiano con un ragionamento strutturato e dettagliato."
+    )
+    
+    return ai_provider.generate(prompt, max_tokens=1500)
+
+def agent_validazione_verita_advanced(article, verification_data, ai_provider):
+    """Agente di validazione verità con ragionamento complesso step-by-step"""
+    fact_check_results = verification_data.get('fact_check_results', [])
+    reliable_results = verification_data.get('reliable_sources_results', [])
+    
+    fact_check_content = ""
+    if fact_check_results and not fact_check_results[0].get('error'):
+        for result in fact_check_results[:5]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
+            
+            if full_content:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
+            else:
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
+    
+    reliable_content = ""
+    if reliable_results and not reliable_results[0].get('error'):
+        for result in reliable_results[:5]:
+            title = result.get('title', '')
+            snippet = result.get('snippet', '')
+            full_content = result.get('full_content', '')
+            source = result.get('source', '')
+            search_query = result.get('search_query', '')
+            language = result.get('language', 'it')
+            
+            if language == 'en':
+                title = f"[TRADOTTO] {title}"
+                if full_content:
+                    full_content = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {full_content}"
+                else:
+                    snippet = f"[CONTENUTO IN INGLESE - TRADUCI AUTOMATICAMENTE] {snippet}"
+            
+            if full_content:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
+            else:
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
+    
+    title = article.get('title', 'Testo personalizzato')
+    summary = article.get('summary', '')
+    author = article.get('author', 'Fonte sconosciuta')
+    date = article.get('date', 'Data non disponibile')
+    
+    prompt = (
+        f"Sei un analista di intelligence esperto. Valuta la veridicità di questa notizia usando un ragionamento step-by-step approfondito.\n\n"
+        f"🔍 NOTIZIA DA VALIDARE:\n"
+        f"📰 Titolo: {title}\n"
+        f"📝 Riassunto: {summary}\n"
+        f"🏢 Fonte: {author}\n"
+        f"📅 Data: {date}\n\n"
+        f"🔎 FONTI DISPONIBILI:\n{fact_check_content}\n\n"
+        f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
+        f"🧠 RAGIONAMENTO STRUTTURATO:\n\n"
+        f"**STEP 1: DECOMPOSIZIONE DEL PROBLEMA**\n"
+        f"Pensa ad alta voce:\n"
+        f"- Quali sono le affermazioni specifiche da verificare?\n"
+        f"- Che tipo di evidenze servirebbero per confermare/smentire?\n"
+        f"- Quali sono i potenziali bias o limitazioni?\n\n"
+        f"**STEP 2: VALUTAZIONE DELLE EVIDENZE**\n"
+        f"Analizza sistematicamente:\n"
+        f"- Quali evidenze supportano la notizia?\n"
+        f"- Quali evidenze la contraddicono?\n"
+        f"- Quali sono le evidenze più affidabili?\n"
+        f"- Per ogni studio scientifico: valuta metodologia, campione, peer review\n"
+        f"- Ci sono evidenze 'sospette' o di parte?\n"
+        f"- CHI ha finanziato la ricerca? Ci sono conflitti di interesse?\n"
+        f"- Esistono critiche o repliche dello studio specifico?\n"
+        f"- Il consenso scientifico sul tema supporta o contraddice?\n\n"
+        f"**STEP 3: ANALISI DELLE FONTI**\n"
+        f"Valuta criticamente:\n"
+        f"- Quali fonti sono più credibili?\n"
+        f"- Ci sono conflitti di interesse?\n"
+        f"- Le fonti sono indipendenti?\n"
+        f"- Ci sono pattern di bias?\n\n"
+        f"**STEP 4: VALUTAZIONE CRITICA DEGLI STUDI**\n"
+        f"Analizza ogni studio scientifico:\n"
+        f"- Metodologia: campione rappresentativo? controlli adeguati?\n"
+        f"- Peer review: rivista di qualità? processo di revisione?\n"
+        f"- Finanziamenti: chi ha pagato? conflitti di interesse?\n"
+        f"- Critiche: esistono repliche o critiche metodologiche?\n"
+        f"- Consenso: altri studi concordano o contraddicono?\n"
+        f"- Predatory journals: rivista sconosciuta o di bassa qualità?\n"
+        f"- Contraddizioni temporali o logiche?\n"
+        f"- Pattern sospetti o manipolazioni evidenti?\n\n"
+        f"**STEP 5: VALUTAZIONE DELLA CONFIDENZA**\n"
+        f"Determina il livello di certezza:\n"
+        f"- Quanto sono forti le evidenze?\n"
+        f"- Quanto sono affidabili le fonti?\n"
+        f"- Ci sono gap informativi?\n"
+        f"- Quali sono le incertezze?\n\n"
+        f"**STEP 6: CONCLUSIONE FINALE**\n"
+        f"Raggiungi un verdetto:\n"
+        f"- Basandoti su tutti gli step precedenti\n"
+        f"- Considerando il livello di confidenza\n"
+        f"- Identificando le limitazioni\n\n"
+        f"🎯 VERDETTO FINALE:\n"
+        f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
+        f"2. **CONFIDENZA**: [ALTO 90%+] / [MEDIO 70-90%] / [BASSO <70%]\n"
+        f"3. **EVIDENZE CHIAVE**: Le prove più importanti\n"
+        f"4. **RED FLAG**: Segnali di allarme identificati\n"
+        f"5. **LIMITAZIONI**: Cosa non possiamo sapere\n"
+        f"6. **MOTIVAZIONE**: Spiega il ragionamento finale\n\n"
+        f"⚠️ IMPORTANTE: \n"
+        f"- Usa il ragionamento step-by-step per conclusioni ben fondate\n"
+        f"- VALUTA ogni studio scientifico individualmente (metodologia, qualità, consenso)\n"
+        f"- Cerca CHI ha finanziato lo studio e eventuali conflitti di interesse\n"
+        f"- Verifica se esistono critiche o repliche dello studio specifico\n"
+        f"- Controlla il consenso scientifico sul tema\n"
+        f"- Distingui tra studi di qualità e predatory journals\n\n"
+        f"🌐 Se trovi contenuti in inglese, traduci automaticamente.\n\n"
+        f"Rispondi in italiano con un ragionamento strutturato e dettagliato."
+    )
+    
+    return ai_provider.generate(prompt, max_tokens=1200)

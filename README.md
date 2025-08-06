@@ -16,11 +16,16 @@ Not only can you browse the latest news, but you can launch **multiple AI agents
   - *Theory Agent*: connects dots and builds scenarios
   - *Universal Analysis Agent*: multi-thematic framework for complex topics
   - *(All agents can be triggered from the terminal UI!)*
-- **🔍 News Verification System** (with SerpAPI):
+- **🔍 Advanced News Verification System** (with SerpAPI):
   - Verify selected articles or custom text
+  - **Three verification modes**: Fast, Medium, Comprehensive
+  - **Standard and Advanced verification** with step-by-step reasoning
   - Fact-checking search results with full content scraping
+  - **Bilingual search** (Italian + English sources)
   - Reliable sources cross-reference
-  - AI-powered truth analysis
+  - AI-powered truth analysis with critical skepticism
+  - **Direct truth validation** with clear verdicts (VERA/FALSA/DUBBIA)
+- **⚙️ Built-in Settings Manager**: Modify all configuration directly from UI
 - **Full article content scraping** for comprehensive analysis
 - **Open article in browser** with one key
 - **Multi-language** and Google News topic filtering (configurable in settings)
@@ -71,6 +76,20 @@ news-agent
    model = qwen2:7b-instruct
    ```
 4. Run: `python -m news_agent.main`
+
+### ⚙️ Built-in Settings Manager
+
+**NEW**: You can now modify all settings directly from the UI!
+
+1. **Press `c`** in the main menu to open the configuration panel
+2. **Select what to modify**:
+   - Provider AI (ollama/openai/claude)
+   - AI models for each provider
+   - API keys (OpenAI, Claude, SerpAPI)
+   - General settings (language, RSS feed, articles per page)
+   - View current configuration
+
+**No more manual file editing required!** 🎉
 
 ### Detailed Configuration
 
@@ -172,11 +191,22 @@ openai_model = gpt-4
 
 1. **Configuration Reading**: The program reads `provider =` from `settings.ini`
 2. **Provider Creation**: Creates the appropriate AI provider using `create_ai_provider()`
-3. **Unified Interface**: All agents use the same provider for:
+3. **Fallback System**: If multiple providers are configured, automatically tries alternatives if one fails
+4. **Unified Interface**: All agents use the same provider for:
    - 📰 Article summarization (`s`)
    - 🤖 LLM agents (`a`)
    - 🔍 News verification (`v`)
-4. **Model Name Display**: Shows which model is being used in response titles
+5. **Model Name Display**: Shows which model is being used in response titles
+
+### 🔄 Automatic Fallback System
+
+If you have multiple AI providers configured, the system will:
+1. **Try the primary provider** first
+2. **Automatically switch** to the next available provider if one fails
+3. **Show feedback** about which provider is being used
+4. **Ensure continuity** even with temporary server errors
+
+**Example**: If Claude returns a 529 error, the system automatically switches to OpenAI or Ollama.
 
 ### News Verification Setup
 
@@ -190,11 +220,13 @@ To enable the news verification feature:
 3. The verification option (`v`) will appear in the menu
 
 **Verification Features:**
-- Searches for fact-checking information
+- **Three search modes**: Fast (quick), Medium (balanced), Comprehensive (thorough)
+- Searches for fact-checking information in both Italian and English
 - Cross-references with reliable sources
 - **Scrapes full content** of verification articles
-- Uses AI to analyze truthfulness
+- Uses AI to analyze truthfulness with critical skepticism
 - Provides detailed verification report
+- **Advanced verification** with step-by-step reasoning (Chain-of-Thought)
 
 ---
 
@@ -213,6 +245,7 @@ To enable the news verification feature:
 - **s**: Generate article summary (with full content scraping)
 - **a**: Run LLM agents on selected article
 - **v**: Verify news (if SerpAPI configured)
+- **c**: **NEW** - Open configuration settings menu
 - **q**: Quit
 
 ### LLM Agents Menu (a)
@@ -223,17 +256,59 @@ To enable the news verification feature:
 5. **Tutti gli agenti**: Run all agents in sequence
 
 ### News Verification (v)
-1. **Verify selected article**: Analyzes the currently selected news item
-2. **Verify custom text**: Enter your own text to verify
-3. **Validazione verità**: Direct truth validation with clear verdict
+**NEW**: Multi-agent verification system with specialized agents!
+
+#### **📰 ARTICOLO SELEZIONATO:**
+1. **Verifica Standard**: Basic critical analysis of selected article
+2. **Validazione Verità Standard**: Direct truth validation with confidence level
+3. **Sistema Multi-Agente** 🤖: **NEW** - Complete analysis with 6 specialized agents
+
+#### **📝 TESTO PERSONALIZZATO:**
+4. **Verifica Standard**: Basic critical analysis of custom text
+5. **Verifica Avanzata (Step-by-Step)**: Detailed analysis with structured reasoning
+6. **Validazione Verità Avanzata**: Advanced truth validation with complex analysis
+
+#### **🤖 Sistema Multi-Agente (Opzione 3):**
+The most comprehensive verification system using 6 specialized agents:
+
+- **🔍 Agente Investigatore**: Finds and collects key information
+- **📊 Agente Analista Metodologico**: Evaluates scientific studies
+- **🎯 Agente Verificatore**: Checks specific facts
+- **⚖️ Agente Giudice**: Analyzes bias and conflicts of interest
+- **🌐 Agente Consenso**: Analyzes scientific consensus
+- **🧠 Agente Sintetizzatore**: Combines all results for final verdict
+
+#### **⚡ Verification Modes:**
+- **Veloce** (~30 sec): Quick fact-checking, basic sources, Italian only
+- **Media** (~2 min): Balanced approach, bilingual sources, full scraping
+- **Grande** (~5 min): Comprehensive analysis, complete bilingual sources
+
+#### **🎯 When to Use Each Type:**
+
+| Type | Use Case | Time | Complexity |
+|------|----------|------|------------|
+| **Standard** | Quick verification | ~1-2 min | Medium |
+| **Multi-Agent** | Complex/controversial news | ~3-5 min | High |
+| **Step-by-Step** | Detailed analysis | ~2-3 min | High |
+| **Truth Validation** | Direct true/false assessment | ~1-2 min | Medium |
 
 The verification system:
+- **Bilingual search** (Italian + English sources)
 - Searches for fact-checking information
 - Cross-references with reliable sources
 - **Scrapes full content** of verification articles
-- Uses AI to analyze truthfulness
+- Uses AI to analyze truthfulness with **critical analysis**
 - Provides detailed verification report with content status
-- **NEW**: Direct truth validation with VERDICT (VERA/FALSA/DUBBIA)
+- **Advanced agents** use Chain-of-Thought reasoning for complex analysis
+
+### ⚙️ Configuration Menu (c)
+**NEW**: Built-in settings manager!
+
+1. **Modifica provider AI**: Switch between ollama/openai/claude
+2. **Modifica modello AI**: Change AI models for each provider
+3. **Modifica chiavi API**: Add/update API keys
+4. **Modifica impostazioni generali**: Language, RSS feed, articles per page
+5. **Visualizza configurazione attuale**: See all current settings
 
 ---
 
@@ -247,6 +322,72 @@ The system includes five specialized agents that work with **any AI provider**:
 4. **Universal Analysis Agent**: Multi-thematic framework for complex topics
 5. **Verification Agent**: Evaluates news truthfulness using multiple sources
 6. **Truth Validation Agent**: Provides direct verdict (VERA/FALSA/DUBBIA) with confidence level
+
+### Advanced Verification Agents
+
+**NEW**: Multi-agent verification system with specialized roles!
+
+#### **🤖 Sistema Multi-Agente (Opzione 3)**
+The most comprehensive verification system using 6 specialized agents that work together:
+
+1. **🔍 Agente Investigatore**
+   - Finds and collects key information from sources
+   - Identifies scientific studies mentioned
+   - Detects specific claims to verify
+   - Identifies potential biased sources
+
+2. **📊 Agente Analista Metodologico**
+   - Evaluates methodology of each scientific study
+   - Checks journal quality and peer review process
+   - Identifies methodological criticisms
+   - Analyzes statistical robustness
+   - Distinguishes between high-quality studies and predatory journals
+
+3. **🎯 Agente Verificatore**
+   - Checks veracity of specific claims
+   - Looks for contradictions between sources
+   - Identifies temporal inconsistencies
+   - Detects data manipulations
+   - Finds unverifiable statements
+
+4. **⚖️ Agente Giudice**
+   - Analyzes conflicts of interest
+   - Identifies funding sources
+   - Detects selection bias, confirmation bias
+   - Finds cherry-picking of data
+   - Evaluates source reliability
+
+5. **🌐 Agente Consenso**
+   - Analyzes scientific consensus on the topic
+   - Evaluates quality of consensus
+   - Identifies outlier studies and their quality
+   - Determines if consensus is strong (90%+) or weak (60-90%)
+
+6. **🧠 Agente Sintetizzatore**
+   - Combines all agent results
+   - Weighs evidence based on quality
+   - Considers scientific consensus
+   - Evaluates conflicts of interest
+   - Reaches final verdict
+
+#### **📋 Standard Verification (Opzioni 1, 4)**
+- Basic fact-checking and source analysis
+- Suitable for most verification needs
+- Faster processing (~1-2 minutes)
+
+#### **🧠 Advanced Verification (Opzioni 5, 6)**
+- **Chain-of-Thought reasoning**: 6-step structured analysis
+- **Critical analysis**: Evaluates each study individually
+- **Methodology assessment**: Checks study quality and peer review
+- **Consensus analysis**: Verifies scientific agreement
+- **Comprehensive investigation**: Deeper analysis of complex topics
+
+**Advanced agents are specifically designed to:**
+- Evaluate each scientific study individually (methodology, quality, consensus)
+- Check funding sources and conflicts of interest
+- Verify if criticisms or replications of specific studies exist
+- Distinguish between objective facts and subjective interpretations
+- Provide evidence-based analysis of controversial topics
 
 ### Universal Analysis Framework
 
@@ -356,3 +497,26 @@ topic = https://www.ansa.it/sito/ansait_rss.xml
 ```
 
 All agents work with any provider - choose based on your needs for privacy, cost, and quality!
+
+---
+
+## 🔄 Recent Updates
+
+### Latest Features Added:
+- **⚙️ Built-in Settings Manager**: Modify all configuration from UI (press `c`)
+- **🤖 Multi-Agent Verification System**: 6 specialized agents working together
+- **🔍 Advanced Verification Modes**: Fast/Medium/Comprehensive search modes
+- **🧠 Chain-of-Thought Reasoning**: Step-by-step analysis for complex verification
+- **🌍 Bilingual Search**: Italian + English sources for comprehensive fact-checking
+- **📊 Critical Analysis**: Individual evaluation of scientific studies
+- **📈 Consensus Analysis**: Scientific consensus verification
+- **🎯 Specialized Agent Roles**: Investigator, Methodologist, Verifier, Judge, Consensus, Synthesizer
+
+### Verification Improvements:
+- **Multi-agent system** with 6 specialized agents for comprehensive analysis
+- **Three search modes** for different needs and time constraints
+- **Advanced agents** with structured reasoning for complex topics
+- **Critical analysis** that evaluates each study individually
+- **Consensus analysis** to verify scientific agreement
+- **Bilingual search capabilities** for comprehensive fact-checking
+- **Specialized agent workflow** for systematic verification
