@@ -212,6 +212,10 @@ def main():
                     console.print(f"[bold green]✅ Lingua aggiornata a: {new_lang} e salvata in settings.ini[/bold green]")
 
                     feed = f"https://news.google.com/rss?hl={new_lang}&gl={new_lang.upper()}&ceid={topic or ''}"
+
+                    if new_lang == "it":
+                        feed = topic
+                    
                     articles = fetch_articles(feed)
                     if not articles:
                         print("Nessun articolo trovato!")
