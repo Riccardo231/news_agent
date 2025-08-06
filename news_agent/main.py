@@ -2,16 +2,15 @@
 
 from .settings import load_settings
 from .fetcher import fetch_articles
-from .agents import agent_riassunto, agent_implicazioni, agent_teoria, summarize_article, agent_verifica, agent_validazione_verita
-from .ui import show_table, show_article, get_arrow_input, show_verification_menu, show_verification_results
+from .agents import agent_riassunto, agent_implicazioni, agent_teoria, summarize_article, agent_verifica, agent_validazione_verita, agent_verifica_advanced, agent_validazione_verita_advanced
+from .multi_agents import run_multi_agent_verification
+from .ui import show_table, show_article, get_arrow_input, show_verification_menu, show_verification_results, show_settings_menu, edit_ai_provider, edit_ai_model, edit_api_keys, edit_serpapi, edit_general_settings, show_current_settings, save_settings_change
 from .ai_providers import create_ai_provider
 from .verifier import NewsVerifier
 from rich.panel import Panel
 from rich.console import Console
-import requests
 import webbrowser
 import sys
-from .kaggle_notebook import open_kaggle_notebook
 
 def get_model_name(ai_provider):
     """Ottiene il nome del modello dall'AI provider"""
@@ -19,8 +18,59 @@ def get_model_name(ai_provider):
         return ai_provider.model
     return "Modello sconosciuto"
 
+def handle_settings_menu(console):
+    """Gestisce il menu delle impostazioni"""
+    while True:
+        choice = show_settings_menu()
+        
+        if choice == '0':
+            break
+        elif choice == '1':
+            provider = edit_ai_provider()
+            if provider and save_settings_change('provider', provider):
+                console.print(f"[green]✅ Provider AI impostato su: {provider}[/green]")
+                console.input("\nPremi invio per continuare...")
+        elif choice == '2':
+            from .settings import load_settings
+            settings = load_settings()
+            current_provider = settings.get('provider', 'ollama')
+            
+            if current_provider == 'auto':
+                console.print("[yellow]⚠️ Impostazione 'auto' attiva. Seleziona prima un provider specifico.[/yellow]")
+                console.input("\nPremi invio per continuare...")
+                continue
+            
+            model = edit_ai_model(current_provider)
+            if model:
+                key = f'{current_provider}_model'
+                if save_settings_change(key, model):
+                    console.print(f"[green]✅ Modello {current_provider} impostato su: {model}[/green]")
+                    console.input("\nPremi invio per continuare...")
+        elif choice == '3':
+            result = edit_api_keys()
+            if result:
+                key, value = result
+                if save_settings_change(key, value):
+                    console.print(f"[green]✅ {key} salvato con successo[/green]")
+                    console.input("\nPremi invio per continuare...")
+        elif choice == '4':
+            edit_serpapi()
+        elif choice == '5':
+            result = edit_general_settings()
+            if result:
+                key, value = result
+                if save_settings_change(key, value):
+                    console.print(f"[green]✅ {key} impostato su: {value}[/green]")
+                    console.input("\nPremi invio per continuare...")
+        elif choice == '6':
+            show_current_settings()
+        else:
+            console.print("[red]Opzione non valida[/red]")
+            console.input("\nPremi invio per continuare...")
+
 def main():
     settings = load_settings()
+    
     lang = settings.get("lang", "it")
     topic = settings.get("topic")
     per_page = int(settings.get("articles_per_page", 15))
@@ -28,6 +78,8 @@ def main():
     serpapi_key = settings.get("serpapi_key")
     
     console = Console()
+    
+
     
     try:
         ai_provider = create_ai_provider(provider, settings)
@@ -37,8 +89,18 @@ def main():
         return
     
     verifier = None
-    if serpapi_key:
-        verifier = NewsVerifier(serpapi_key)
+    if serpapi_key and serpapi_key.strip():
+        try:
+            verifier = NewsVerifier(serpapi_key)
+            console.print(f"[green]✅ SerpAPI configurata correttamente[/green]")
+        except Exception as e:
+            console.print(f"[red]❌ Errore inizializzazione SerpAPI: {e}[/red]")
+            verifier = None
+    else:
+        console.print(f"[yellow]⚠️ SerpAPI non configurata - opzione verifica non disponibile[/yellow]")
+        console.print(f"[dim]Per abilitare la verifica, aggiungi la tua serpapi_key in settings.ini[/dim]")
+    
+
     
     console.print("\n[bold yellow]📰 Caricamento notizie...[/bold yellow]")
     
@@ -106,133 +168,74 @@ def main():
         elif user_input == 'v' and verifier:
             idx = selected_idx
             article = articles[idx]
-            verification_type = show_verification_menu()
+            result = show_verification_menu()
+            
+            if result is None:
+                continue
+                
+            verification_type, mode = result
             
             if verification_type == '1':
-                console.print(f"\n[bold yellow]🔍 Verificando articolo: {article['title']}[/bold yellow]")
-                verification_data = verifier.verify_article(article)
+                console.print(f"\n[bold yellow]🔍 Verificando articolo: {article['title']} (modalità: {mode})[/bold yellow]")
+                verification_data = verifier.verify_article(article, mode)
                 agent_analysis = agent_verifica(article, verification_data, ai_provider)
                 show_verification_results(verification_data, agent_analysis, model_name)
             elif verification_type == '2':
-                custom_text = console.input("\nInserisci il testo da verificare: ")
-                if custom_text.strip():
-                    console.print(f"\n[bold yellow]🔍 Verificando testo personalizzato...[/bold yellow]")
-                    verification_data = verifier.verify_text(custom_text)
-                    agent_analysis = agent_verifica({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
-                    show_verification_results(verification_data, agent_analysis, model_name)
-            elif verification_type == '3':
-                console.print(f"\n[bold yellow]🔍 Verificando validazione della verità di: {article['title']}[/bold yellow]")
-                verification_data = verifier.verify_article(article)
+                console.print(f"\n[bold yellow]🔍 Validazione verità articolo: {article['title']} (modalità: {mode})[/bold yellow]")
+                verification_data = verifier.verify_article(article, mode)
                 agent_analysis = agent_validazione_verita(article, verification_data, ai_provider)
                 show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '3':
+                console.print(f"\n[bold magenta]🤖 Sistema multi-agente articolo: {article['title']} (modalità: {mode})...[/bold magenta]")
+                verification_data = verifier.verify_article(article, mode)
+                agent_analysis = run_multi_agent_verification(article, verification_data, ai_provider)
+                show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '4':
+                console.print(f"\n[bold green]🎯 Sistema multi-agente AUTOMATICO articolo: {article['title']} (modalità: {mode})...[/bold green]")
+                verification_data = verifier.verify_article(article, mode)
+                agent_analysis = run_multi_agent_verification(article, verification_data, ai_provider)
+                show_verification_results(verification_data, agent_analysis, model_name)
+            
+            # Testo personalizzato
+            elif verification_type == '5':
+                custom_text = console.input("\nInserisci il testo da verificare: ")
+                if custom_text.strip():
+                    console.print(f"\n[bold yellow]🔍 Verificando testo personalizzato (modalità: {mode})...[/bold yellow]")
+                    verification_data = verifier.verify_text(custom_text, mode)
+                    agent_analysis = agent_verifica({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
+                    show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '5':
+                custom_text = console.input("\nInserisci il testo da verificare: ")
+                if custom_text.strip():
+                    console.print(f"\n[bold yellow]🔍 Verificando testo personalizzato (modalità: {mode})...[/bold yellow]")
+                    verification_data = verifier.verify_text(custom_text, mode)
+                    agent_analysis = agent_verifica({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
+                    show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '6':
+                custom_text = console.input("\nInserisci il testo da verificare: ")
+                if custom_text.strip():
+                    console.print(f"\n[bold blue]🧠 Verifica avanzata testo (step-by-step) (modalità: {mode})...[/bold blue]")
+                    verification_data = verifier.verify_text(custom_text, mode)
+                    agent_analysis = agent_verifica_advanced({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
+                    show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '7':
+                custom_text = console.input("\nInserisci il testo da verificare: ")
+                if custom_text.strip():
+                    console.print(f"\n[bold blue]🧠 Validazione avanzata testo (modalità: {mode})...[/bold blue]")
+                    verification_data = verifier.verify_text(custom_text, mode)
+                    agent_analysis = agent_validazione_verita_advanced({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
+                    show_verification_results(verification_data, agent_analysis, model_name)
+            elif verification_type == '8':
+                custom_text = console.input("\nInserisci il testo da verificare: ")
+                if custom_text.strip():
+                    console.print(f"\n[bold green]🎯 Sistema multi-agente AUTOMATICO testo (modalità: {mode})...[/bold green]")
+                    verification_data = verifier.verify_text(custom_text, mode)
+                    agent_analysis = run_multi_agent_verification({'title': 'Testo personalizzato', 'summary': custom_text}, verification_data, ai_provider)
+                    show_verification_results(verification_data, agent_analysis, model_name)
             
             console.input("\nPremi invio per tornare alla lista")
         elif user_input == 'c':
-            console.print("[bold yellow]🔍 Cerco i modelli disponibili su Ollama...[/bold yellow]")
-            try:
-                resp = requests.get(ollama_url.replace("/generate", "/tags"))
-                resp.raise_for_status()
-                models_data = resp.json().get("models", [])
-
-                if not models_data:
-                    console.print("[red]❌ Nessun modello trovato su Ollama.[/red]")
-                    return
-
-                # Ordina i modelli per dimensione (campo 'size'), decrescente
-                models_sorted = sorted(models_data, key=lambda m: m.get("size", 0), reverse=True)
-
-                if len(models_sorted) < 3:
-                    console.print("[red]⚠️ Trovati meno di 3 modelli, scegli manualmente.[/red]")
-                    for i, m in enumerate(models_sorted):
-                        console.print(f"{i+1}: {m['name']}")
-                    idx = int(console.input("Inserisci il numero del modello da usare: ").strip()) - 1
-                    if 0 <= idx < len(models_sorted):
-                        model = models_sorted[idx]["name"]
-                else:
-                    model_light = models_sorted[-1]["name"]
-                    model_medium = models_sorted[len(models_sorted) // 2]["name"]
-                    model_heavy = models_sorted[0]["name"]
-
-                    console.print("\n[bold yellow]Scegli un modello:[/bold yellow]")
-                    console.print(f"1: modello più leggero → [green]{model_light}[/green]")
-                    console.print(f"2: modello intermedio → [cyan]{model_medium}[/cyan]")
-                    console.print(f"3: modello più pesante → [magenta]{model_heavy}[/magenta]")
-                    console.print("p: personalizzato")
-
-                    new_model = console.input("Scelta: ").strip()
-                    if new_model == '1':
-                        model = model_light
-                    elif new_model == '2':
-                        model = model_medium
-                    elif new_model == '3':
-                        model = model_heavy
-                    elif new_model == 'p':
-                        model = console.input("Inserisci il nome del modello personalizzato: ").strip()
-
-                # 🔄 aggiorna il setting e salva nel file ini
-                settings["model"] = model
-                from .settings import save_settings
-                save_settings(settings)
-
-                console.print(f"[bold green]✅ Modello aggiornato a: {model} e salvato in settings.ini[/bold green]")
-
-            except Exception as e:
-                console.print(f"[red]❌ Errore nel recupero dei modelli: {e}[/red]")
-        elif user_input == 'l':
-            console.print("\n[bold yellow]🌍 Cambia lingua delle notizie[/bold yellow]")
-
-            lingue = {
-                "1": ("it", "🇮🇹 Italiano"),
-                "2": ("en", "🇬🇧 English"),
-                "3": ("de", "🇩🇪 Deutsch"),
-                "4": ("fr", "🇫🇷 Français"),
-                "5": ("es", "🇪🇸 Español"),
-                "6": ("pt", "🇵🇹 Português"),
-                "7": ("nl", "🇳🇱 Nederlands"),
-                "8": ("pl", "🇵🇱 Polski"),
-                "9": ("tr", "🇹🇷 Türkçe"),
-                "p": ("manual", "✍️ Inserisci codice manuale")
-            }
-
-            for k, (code, name) in lingue.items():
-                console.print(f"{k}: {name} [{code}]")
-
-            scelta = console.input("\nScegli una lingua (1-9, p): ").strip()
-
-            if scelta in lingue:
-                if scelta == 'p':
-                    new_lang = console.input("Inserisci codice lingua (es. it, en, de): ").strip().lower()
-                else:
-                    new_lang = lingue[scelta][0]
-
-                if len(new_lang) >= 1:
-                    settings["lang"] = new_lang
-                    from .settings import save_settings
-                    save_settings(settings)
-                    console.print(f"[bold green]✅ Lingua aggiornata a: {new_lang} e salvata in settings.ini[/bold green]")
-
-                    feed = f"https://news.google.com/rss?hl={new_lang}&gl={new_lang.upper()}&ceid={topic or ''}"
-                    articles = fetch_articles(feed)
-                    if not articles:
-                        print("Nessun articolo trovato!")
-                        return
-                else:
-                    console.print("[red]❌ Codice lingua non valido (usa due lettere tipo 'it', 'en')[/red]")
-            else:
-                console.print("[red]❌ Scelta non valida.[/red]")
-        elif user_input == 'k':
-            console.print("\n[bold cyan]🔬 Kaggle AI Models[/bold cyan]")
-            console.print("Creando notebook Kaggle per AI models...")
-            
-            notebook_path = open_kaggle_notebook()
-            if notebook_path:
-                console.print(f"\n[green]✅ Notebook creato con successo![/green]")
-                console.print(f"[white]📁 Percorso: {notebook_path}[/white]")
-                console.print(f"\n[yellow]🔗 Kaggle aperto nel browser - carica il notebook per iniziare![/yellow]")
-            else:
-                console.print(f"[red]❌ Errore nella creazione del notebook[/red]")
-            
-            console.input("\nPremi invio per tornare alla lista...")
+            handle_settings_menu(console)
         elif user_input == '\r' or user_input == '\n':
             show_article(articles[selected_idx])
             console.input("Premi invio per tornare alla lista: ")
