@@ -62,80 +62,115 @@ class NewsVerifier:
         except Exception as e:
             return None
     
-    def search_fact_check(self, query: str, max_results: int = 5) -> List[Dict]:
-        """Cerca informazioni di fact-checking su una query"""
-        params = {
-            'q': f"{query} fact check verification",
-            'api_key': self.serpapi_key,
-            'engine': 'google',
-            'num': max_results,
-            'gl': 'it',
-            'hl': 'it'
-        }
-        
-        try:
-            response = requests.get(self.base_url, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            results = []
-            if 'organic_results' in data:
-                for result in data['organic_results']:
-                    full_content = self.scrape_article_content(result.get('link', ''))
-                    
-                    results.append({
-                        'title': result.get('title', ''),
-                        'snippet': result.get('snippet', ''),
-                        'link': result.get('link', ''),
-                        'source': result.get('source', ''),
-                        'full_content': full_content
-                    })
-            
-            return results
-        except Exception as e:
-            return [{'error': f"Errore nella ricerca: {str(e)}"}]
-    
-    def search_reliable_sources(self, query: str, max_results: int = 5) -> List[Dict]:
-        """Cerca informazioni da fonti affidabili"""
-        reliable_sources = [
-            "reuters.com", "ap.org", "bbc.com", "corriere.it", 
-            "repubblica.it", "ansa.it", "ilsole24ore.com"
+    def search_fact_check(self, query):
+        """Cerca articoli di fact-checking sulla query"""
+        # Query più specifiche per fact-checking
+        fact_check_queries = [
+            f'"{query}" fact check',
+            f'"{query}" verificato',
+            f'"{query}" bufala',
+            f'"{query}" fake news',
+            f'"{query}" smentita',
+            f'"{query}" controverse',
+            f'"{query}" difetti',
+            f'"{query}" problemi tecnici',
+            f'"{query}" dichiarazioni comandante',
+            f'"{query}" versione ufficiale vs realtà'
         ]
         
-        params = {
-            'q': query,
-            'api_key': self.serpapi_key,
-            'engine': 'google',
-            'num': max_results * 2,
-            'gl': 'it',
-            'hl': 'it'
-        }
+        all_results = []
         
-        try:
-            response = requests.get(self.base_url, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-            
-            results = []
-            if 'organic_results' in data:
-                for result in data['organic_results']:
-                    link = result.get('link', '').lower()
-                    if any(source in link for source in reliable_sources):
+        for search_query in fact_check_queries:
+            try:
+                params = {
+                    'api_key': self.serpapi_key,
+                    'engine': 'google',
+                    'q': search_query,
+                    'num': 5,
+                    'gl': 'it',
+                    'hl': 'it'
+                }
+                
+                response = requests.get('https://serpapi.com/search', params=params, timeout=10)
+                data = response.json()
+                
+                if 'organic_results' in data:
+                    for result in data['organic_results']:
                         full_content = self.scrape_article_content(result.get('link', ''))
                         
-                        results.append({
+                        all_results.append({
                             'title': result.get('title', ''),
-                            'snippet': result.get('snippet', ''),
                             'link': result.get('link', ''),
+                            'snippet': result.get('snippet', ''),
                             'source': result.get('source', ''),
-                            'full_content': full_content
+                            'full_content': full_content,
+                            'search_query': search_query
                         })
-                        if len(results) >= max_results:
-                            break
-            
-            return results
-        except Exception as e:
-            return [{'error': f"Errore nella ricerca: {str(e)}"}]
+                        
+            except Exception as e:
+                print(f"Errore nella ricerca fact-check: {e}")
+                continue
+        
+        return all_results[:10]  # Limita a 10 risultati totali
+
+    def search_reliable_sources(self, query):
+        """Cerca fonti affidabili sulla query"""
+        # Query più specifiche per fonti affidabili
+        reliable_queries = [
+            f'"{query}"',
+            f'"{query}" inchiesta',
+            f'"{query}" investigazione',
+            f'"{query}" analisi tecnica',
+            f'"{query}" perizia',
+            f'"{query}" esperti',
+            f'"{query}" testimonianze',
+            f'"{query}" registrazioni cockpit',
+            f'"{query}" black box',
+            f'"{query}" rapporto finale'
+        ]
+        
+        reliable_sources = [
+            'ansa.it', 'corriere.it', 'repubblica.it', 'ilsole24ore.com',
+            'ilfattoquotidiano.it', 'rainews.it', 'tg24.sky.it', 'adnkronos.com',
+            'ansa.it', 'agi.it', 'askanews.it', 'ilgiornale.it'
+        ]
+        
+        all_results = []
+        
+        for search_query in reliable_queries:
+            try:
+                params = {
+                    'api_key': self.serpapi_key,
+                    'engine': 'google',
+                    'q': search_query,
+                    'num': 5,
+                    'gl': 'it',
+                    'hl': 'it'
+                }
+                
+                response = requests.get('https://serpapi.com/search', params=params, timeout=10)
+                data = response.json()
+                
+                if 'organic_results' in data:
+                    for result in data['organic_results']:
+                        link = result.get('link', '').lower()
+                        if any(source in link for source in reliable_sources):
+                            full_content = self.scrape_article_content(result.get('link', ''))
+                            
+                            all_results.append({
+                                'title': result.get('title', ''),
+                                'link': result.get('link', ''),
+                                'snippet': result.get('snippet', ''),
+                                'source': result.get('source', ''),
+                                'full_content': full_content,
+                                'search_query': search_query
+                            })
+                            
+            except Exception as e:
+                print(f"Errore nella ricerca fonti affidabili: {e}")
+                continue
+        
+        return all_results[:10]  # Limita a 10 risultati totali
     
     def verify_article(self, article: Dict) -> Dict:
         """Verifica un articolo completo"""

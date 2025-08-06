@@ -145,29 +145,31 @@ def agent_verifica(article, verification_data, ai_provider):
     
     fact_check_content = ""
     if fact_check_results and not fact_check_results[0].get('error'):
-        for result in fact_check_results[:3]:
+        for result in fact_check_results[:5]:
             title = result.get('title', '')
             snippet = result.get('snippet', '')
             full_content = result.get('full_content', '')
             source = result.get('source', '')
+            search_query = result.get('search_query', '')
             
             if full_content:
-                fact_check_content += f"\n--- ARTICOLO: {title} ({source}) ---\n{full_content}\n"
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
             else:
-                fact_check_content += f"\n--- ARTICOLO: {title} ({source}) ---\n{snippet}\n"
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
     
     reliable_content = ""
     if reliable_results and not reliable_results[0].get('error'):
-        for result in reliable_results[:3]:
+        for result in reliable_results[:5]:
             title = result.get('title', '')
             snippet = result.get('snippet', '')
             full_content = result.get('full_content', '')
             source = result.get('source', '')
+            search_query = result.get('search_query', '')
             
             if full_content:
-                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{full_content}\n"
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
             else:
-                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
     
     title = article.get('title', 'Testo personalizzato')
     summary = article.get('summary', '')
@@ -176,24 +178,26 @@ def agent_verifica(article, verification_data, ai_provider):
     
     prompt = (
         f"Analizza la veridicità della seguente notizia basandoti sui dati di verifica forniti.\n\n"
-        f"NOTIZIA DA VERIFICARE:\n"
-        f"Titolo: {title}\n"
-        f"Riassunto: {summary}\n"
-        f"Fonte: {author}\n"
-        f"Data: {date}\n\n"
-        f"ARTICOLI DI FACT-CHECKING:\n{fact_check_content}\n\n"
-        f"FONTI AFFIDABILI:\n{reliable_content}\n\n"
-        f"VALUTAZIONE:\n"
-        f"1. Analizza la credibilità della fonte originale\n"
-        f"2. Confronta con i risultati di fact-checking\n"
-        f"3. Verifica la presenza di fonti affidabili che confermano\n"
-        f"4. Identifica eventuali contraddizioni o red flag\n"
-        f"5. Fornisci un giudizio finale: VERITIERA, DUBBIA, o FALSA\n"
-        f"6. Spiega il ragionamento dietro la tua valutazione\n\n"
+        f"🔍 NOTIZIA DA VERIFICARE:\n"
+        f"📰 Titolo: {title}\n"
+        f"📝 Riassunto: {summary}\n"
+        f"🏢 Fonte: {author}\n"
+        f"📅 Data: {date}\n\n"
+        f"🔎 ARTICOLI DI FACT-CHECKING:\n{fact_check_content}\n\n"
+        f"✅ FONTI AFFIDABILI:\n{reliable_content}\n\n"
+        f"📊 VALUTAZIONE COMPLETA:\n"
+        f"1. **CREDIBILITÀ FONTE ORIGINALE**: Valuta l'affidabilità della fonte che ha pubblicato la notizia\n"
+        f"2. **CONFERME E CONTRADDIZIONI**: Identifica quali elementi sono confermati o contraddetti dalle fonti\n"
+        f"3. **CONTROVERSE E DIBATTITI**: Analizza se ci sono versioni diverse o controverse sulla vicenda\n"
+        f"4. **EVIDENZE TECNICHE**: Cerca prove tecniche, testimonianze, documenti ufficiali\n"
+        f"5. **RED FLAG**: Identifica eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
+        f"6. **GIUDIZIO FINALE**: Fornisci un verdetto: VERITIERA, DUBBIA, FALSA, o INSUFFICIENTI DATI\n"
+        f"7. **MOTIVAZIONE**: Spiega il ragionamento dietro la tua valutazione\n\n"
+        f"⚠️ IMPORTANTE: Cerca di identificare se ci sono versioni diverse della storia, controverse, o elementi che mettono in discussione la versione ufficiale.\n\n"
         f"Rispondi in italiano in modo chiaro e strutturato."
     )
     
-    return ai_provider.generate(prompt, max_tokens=800)
+    return ai_provider.generate(prompt, max_tokens=1000)
 
 def agent_validazione_verita(article, verification_data, ai_provider):
     fact_check_results = verification_data.get('fact_check_results', [])
@@ -201,29 +205,31 @@ def agent_validazione_verita(article, verification_data, ai_provider):
     
     fact_check_content = ""
     if fact_check_results and not fact_check_results[0].get('error'):
-        for result in fact_check_results[:3]:
+        for result in fact_check_results[:5]:
             title = result.get('title', '')
             snippet = result.get('snippet', '')
             full_content = result.get('full_content', '')
             source = result.get('source', '')
+            search_query = result.get('search_query', '')
             
             if full_content:
-                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\n{full_content}\n"
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
             else:
-                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\n{snippet}\n"
+                fact_check_content += f"\n--- FACT-CHECK: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
     
     reliable_content = ""
     if reliable_results and not reliable_results[0].get('error'):
-        for result in reliable_results[:3]:
+        for result in reliable_results[:5]:
             title = result.get('title', '')
             snippet = result.get('snippet', '')
             full_content = result.get('full_content', '')
             source = result.get('source', '')
+            search_query = result.get('search_query', '')
             
             if full_content:
-                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{full_content}\n"
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{full_content}\n"
             else:
-                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\n{snippet}\n"
+                reliable_content += f"\n--- FONTE AFFIDABILE: {title} ({source}) ---\nQuery: {search_query}\n{snippet}\n"
     
     title = article.get('title', 'Testo personalizzato')
     summary = article.get('summary', '')
@@ -243,10 +249,12 @@ def agent_validazione_verita(article, verification_data, ai_provider):
         f"Devi fornire:\n"
         f"1. **VERDETTO**: [VERA] / [FALSA] / [DUBBIA] / [INSUFFICIENTI DATI]\n"
         f"2. **CONFIDENZA**: [ALTA] / [MEDIA] / [BASSA] (quanto sei sicuro del verdetto)\n"
-        f"3. **MOTIVAZIONE**: Spiega brevemente perché hai dato questo verdetto\n"
-        f"4. **RED FLAG**: Eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
-        f"5. **CONFERME**: Fonti che supportano o contraddicono la notizia\n\n"
+        f"3. **CONTROVERSE IDENTIFICATE**: Elenca eventuali versioni diverse o controverse trovate\n"
+        f"4. **EVIDENZE CHIAVE**: Le prove più importanti a favore o contro la notizia\n"
+        f"5. **RED FLAG**: Eventuali segnali di allarme (bias, fonti sospette, contraddizioni)\n"
+        f"6. **MOTIVAZIONE**: Spiega brevemente perché hai dato questo verdetto\n\n"
+        f"⚠️ IMPORTANTE: Se trovi controverse o versioni diverse, evidenziale chiaramente. Non limitarti alla versione ufficiale.\n\n"
         f"Rispondi in modo diretto e chiaro, evidenziando il verdetto finale."
     )
     
-    return ai_provider.generate(prompt, max_tokens=600)
+    return ai_provider.generate(prompt, max_tokens=800)
